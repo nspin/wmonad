@@ -1,0 +1,44 @@
+Name:                wmonad
+Version:             0.1
+license:             MIT
+license-file:        LICENSE
+author:              Nick Spinale
+maintainer:          spinalen@carleton.edu
+build-type:          Simple
+extra-source-files:  README.md
+cabal-version:       >=1.10
+
+
+library
+
+  hs-source-dirs:    src
+
+  exposed-modules:   WMonad.Main
+                   , WMonad.Core
+                   , WMonad.Types
+                   , WMonad.Types.Abstract
+                   , WMonad.Types.Concrete
+                   , WMonad.Util
+                   , WMonad.Util.X
+
+  build-depends:     base
+
+                   , mtl
+                   , transformers
+                   , lens
+                   , semigroupoids
+                   , containers
+                   , text
+
+                   , xhb
+                   , xhb-keysyms
+                   , xhb-monad
+                   , xhb-event-queue
+                   , xhb-mapping-state
+                   , xhb-atom-cache
+
+                   , monad-logger
+
+                   , unix
+                   , process
+                   , setlocale
