@@ -35,7 +35,7 @@ data Part n t a = Part { _size :: n
 
 --
 
-data PaneSet sid sd i n t a = TreeSet
+data PaneSet sid sd i n t a = PaneSet
     { _current :: Screen sid sd i n t a
     , _visible :: [Screen sid sd i n t a]
     , _hidden :: [Workspace i n t a]
@@ -90,3 +90,17 @@ instance Traversable (Part n t) where
 
 instance Functor (Part n t) where fmap = fmapDefault
 instance Foldable (Part n t) where foldMap = foldMapDefault
+
+
+instance Traversable (Workspace i n t) where
+    traverse f (Workspace i pane) = Workspace i <$> traverse f pane
+
+instance Functor (Workspace i n t) where fmap = fmapDefault
+instance Foldable (Workspace i n t) where foldMap = foldMapDefault
+
+
+instance Traversable (Screen sid sd i n t) where
+    traverse f (Screen sid sd ws) = Screen sid sd <$> traverse f ws
+
+instance Functor (Screen sid sd i n t) where fmap = fmapDefault
+instance Foldable (Screen sid sd i n t) where foldMap = foldMapDefault

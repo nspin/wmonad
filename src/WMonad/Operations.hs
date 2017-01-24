@@ -1,5 +1,9 @@
 module WMonad.Operations
-    ( grabKeys
+    ( manage
+    , windows
+    , isClient
+    , setInitialProperties
+    , grabKeys
     , grabButtons
     ) where
 
@@ -14,10 +18,31 @@ import Graphics.XHB.MappingState
 
 import Data.Maybe
 
+import Control.Lens hiding (Empty)
 import Control.Monad.Reader
 import Control.Monad.State
 import qualified Data.Map as M
 import qualified Data.Set as S
+
+
+manage :: WINDOW -> W s ()
+manage w = unlessM (isClient w) $ do
+    windows $ current.workspace.pane.fill %~ insertFlat w
+
+
+windows :: (WindowSet -> WindowSet) -> W s ()
+windows f = do
+    undefined
+
+
+isClient :: WINDOW -> W s Bool
+isClient = gets . elemOf (windowset.allClients)
+
+
+setInitialProperties :: MonadX x m => WINDOW -> m ()
+setInitialProperties w = do
+    selectInput w clientMask
+    return ()
 
 
 grabKeys :: W s ()

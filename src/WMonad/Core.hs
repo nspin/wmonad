@@ -85,3 +85,6 @@ onMappingNotify e@MkMappingNotifyEvent{..} = do
 onMapRequest :: MapRequestEvent -> W s ()
 onMapRequest MkMapRequestEvent{window_MapRequestEvent = w} = do
     logs "MapRequestEvent"
+    or <- override_redirect_GetWindowAttributesReply <$> req (MkGetWindowAttributes w)
+    managed <- isClient w
+    unless (managed || or) $ manage w

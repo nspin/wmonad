@@ -1,3 +1,6 @@
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+
 module WMonad.Types.Abstract.Operations
     ( module WMonad.Types.Abstract.Operations.Gen
 
@@ -13,7 +16,15 @@ module WMonad.Types.Abstract.Operations
     , removeR
     , removeL
 
-    -- * Pane
+    -- * PaneSet
+
+    , workspaces
+    , visibleWorkspaces
+    , workspacesContaining
+    , findTag
+    , allClients
+
+    -- * Misc
     , insertFlat
     , spreadOut
     ) where
@@ -36,7 +47,7 @@ spreadOut :: Default n => Stack (Part n t a) -> Stack (Part n t a)
 spreadOut = traverse.size .~ def
 
 
--- STACK
+-- Stack
 
 -- | ... a [b] c ... => b
 center :: Lens' (Stack a) a
@@ -92,3 +103,43 @@ swapR (Stack ls x []) = Stack [] x (reverse ls)
 swapL :: Stack a -> Stack a
 swapL (Stack (l:ls) x (r:rs)) = Stack (r:ls) x rs
 swapL (Stack ls x []) = Stack [] x (reverse ls)
+
+
+-- PaneSet
+
+workspaces :: Traversal' (PaneSet sid sd i n t a) (Workspace i n t a)
+workspaces f PaneSet{..} = PaneSet
+    <$> traverseOf workspace f _current
+    <*> traverseOf (traverse.workspace) f _visible
+    <*> traverseOf traverse f _hidden
+    <*> pure _floating
+
+
+visibleWorkspaces :: Traversal' (PaneSet sid sd i n t a) (Workspace i n t a)
+visibleWorkspaces f PaneSet{..} = PaneSet
+    <$> traverseOf workspace f _current
+    <*> traverseOf (traverse.workspace) f _visible
+    <*> pure _hidden
+    <*> pure _floating
+
+
+workspacesContaining :: Eq a => a -> Traversal' (PaneSet sid sd i n t a) (Workspace i n t a)
+workspacesContaining a f (PaneSet c v h fl) = PaneSet
+    <$> (workspace.one) f c
+    <*> (traverse.workspace.one) f v
+    <*> (traverse.one) f h
+    <*> pure fl
+  where
+    one g ws = if elemOf (traverse) a ws then g ws else pure ws
+
+
+findTag :: Eq a => a -> Traversal' (PaneSet sid sd i n t a) i
+findTag a = workspacesContaining a . tag
+
+
+allClients :: Fold (PaneSet sid sd i n t a) a
+allClients f ps@PaneSet{..} = PaneSet
+    <$> traverse f _current
+    <*> (traverse.traverse) f _visible
+    <*> (traverse.traverse) f _hidden
+    <*> pure _floating

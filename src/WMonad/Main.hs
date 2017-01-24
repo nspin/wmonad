@@ -59,7 +59,7 @@ start Config{..} = do
         (seen, hidden) = L.splitAt (length screens) [ Workspace i (Pane Nothing Empty) | i <- [1..9] ]
         current:visible = zipWith ($) screens seen
 
-        ws0 = TreeSet
+        ws0 = PaneSet
             { _floating = M.empty
             , _current = current
             , _visible = visible
