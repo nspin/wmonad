@@ -33,6 +33,7 @@ import Control.Monad.State
 import Control.Monad.Reader
 import Control.Monad.Logger
 
+import Data.Default
 import Data.Int
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -40,7 +41,12 @@ import qualified Data.Set as S
 
 type WindowSet = PaneSet ScreenId ScreenInfo WorkspaceId Portion Tag WINDOW
 
-type Portion = Int
+newtype Portion = Portion { getPortion :: Int }
+    deriving (Eq, Ord, Show, Read, Enum, Num, Integral, Real)
+
+instance Default Portion where
+    def = 10000
+
 type Tag = Maybe Int
 
 newtype WorkspaceId = WorkspaceId { getWorkspaceId :: Int }

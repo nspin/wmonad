@@ -19,13 +19,6 @@ import qualified Data.Set as S
 data Stack a = Stack [a] a [a]
     deriving (Eq, Show, Read)
 
-instance Traversable Stack where
-    traverse f (Stack ls x rs) = Stack <$> traverse f ls <*> f x <*> traverse f rs
-
-instance Functor Stack where fmap = fmapDefault
-instance Foldable Stack where foldMap = foldMapDefault
-
-
 data Pane n t a = Pane { _label :: t
                        , _fill :: Fill n t a
                        } deriving (Eq, Show, Read)
@@ -68,6 +61,13 @@ data RationalRect = RationalRect Rational Rational Rational Rational
 
 
 -- Instances
+
+instance Traversable Stack where
+    traverse f (Stack ls x rs) = Stack <$> traverse f ls <*> f x <*> traverse f rs
+
+instance Functor Stack where fmap = fmapDefault
+instance Foldable Stack where foldMap = foldMapDefault
+
 
 instance Traversable (Pane n t) where
     traverse f (Pane t fill) = Pane t <$> traverse f fill

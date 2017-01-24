@@ -33,6 +33,7 @@ library
                    , transformers
                    , lens
                    , semigroupoids
+                   , data-default
                    , array
                    , containers
                    , text
