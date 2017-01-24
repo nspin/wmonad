@@ -62,9 +62,9 @@ data TreeSet i n b l sid sd = TreeSet
 
 
 data Screen i n b l sid sd = Screen
-    { _workspace :: Workspace i n b l
-    , _screen :: sid
+    { _screen :: sid
     , _screenDetail :: sd
+    , _workspace :: Workspace i n b l
     } deriving (Eq, Show, Read)
 
 

@@ -1,10 +1,13 @@
 module WMonad.Util.X
-    ( selectInput
-    , getCleanedScreenInfo
+    ( getCleanedScreenInfo
     -- * Constants
     , noneId
     , currentTime
     , anyKey
+    -- * Events
+    , selectInput
+    , clientMask
+    , rootMask
     ) where
 
 
@@ -47,3 +50,19 @@ containedIn r1@(MkScreenInfo x1 y1 w1 h1) r2@(MkScreenInfo x2 y2 w2 h2)
        , fromIntegral x1 + w1 <= fromIntegral x2 + w2
        , fromIntegral y1 + h1 <= fromIntegral y2 + h2
        ]
+
+
+clientMask :: [EventMask]
+clientMask = [ EventMaskStructureNotify
+             , EventMaskEnterWindow
+             , EventMaskPropertyChange
+             ]
+
+rootMask :: [EventMask]
+rootMask = [ EventMaskSubstructureRedirect
+           , EventMaskSubstructureNotify
+           , EventMaskEnterWindow
+           , EventMaskLeaveWindow
+           , EventMaskStructureNotify
+           , EventMaskButtonPress
+           ]

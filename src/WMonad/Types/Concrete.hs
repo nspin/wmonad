@@ -40,9 +40,11 @@ import qualified Data.Set as S
 
 type WindowSet = TreeSet WorkspaceId Portion Tag WINDOW ScreenId ScreenInfo
 
-type WorkspaceId = Int
 type Portion = Int
 type Tag = Int
+
+newtype WorkspaceId = WorkspaceId { getWorkspaceId :: Int }
+    deriving (Eq, Ord, Show, Read, Enum, Num, Integral, Real)
 
 newtype ScreenId = ScreenId { getScreenId :: Int }
     deriving (Eq, Ord, Show, Read, Enum, Num, Integral, Real)

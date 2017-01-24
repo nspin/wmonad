@@ -5,8 +5,9 @@ module WMonad.Main
     ) where
 
 
-import WMonad.Types
 import WMonad.Core
+import WMonad.Types
+import WMonad.Util.X
 
 import Graphics.XHB
 import Graphics.XHB.Monad
@@ -19,6 +20,7 @@ import System.Posix.Process (executeFile, forkProcess, getAnyProcessStatus, crea
 import System.Posix.Signals
 
 import Data.Maybe
+import qualified Data.List as L
 import qualified Data.Map as M
 import qualified Data.Set as S
 
@@ -47,8 +49,24 @@ wmonad config = do
 
 start :: Config s -> X IO a
 start Config{..} = do
+
     root <- asksX getRoot
-    let env = WEnv
+    xinesc <- getCleanedScreenInfo
+
+    selectInput root rootMask
+
+    let screens = zipWith Screen [1..] xinesc
+        (seen, hidden) = L.splitAt (length screens) [ Workspace i Nothing | i <- [1..9] ]
+        current:visible = zipWith ($) screens seen
+
+        ws0 = TreeSet
+            { _floating = M.empty
+            , _current = current
+            , _visible = visible
+            , _hidden = hidden
+            }
+
+        env = WEnv
             { _rootWindow = root
             , _keyActions = _keyActionsConfig
             , _buttonActions = _buttonActionsConfig
@@ -56,13 +74,15 @@ start Config{..} = do
             , _mousePosition = Nothing
             , _currentEvent = Nothing
             }
+
         st = WState
             { _extra = _state0
             , _mapped = S.empty
             , _waitingUnmap = M.empty
             , _dragging = Nothing
-            , _windowset = undefined
+            , _windowset = ws0
             }
+
     manageWindows & runAtomCacheT
                   . runMappingT
                   . flip evalStateT st
