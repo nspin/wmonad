@@ -3,6 +3,7 @@ module WMonad.Operations
     , windows
     , isClient
     , setInitialProperties
+    , tileWindow
     , grabKeys
     , grabButtons
     ) where

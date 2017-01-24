@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module WMonad.Util.X
     ( getCleanedScreenInfo
     , keyButToMod
@@ -6,9 +8,11 @@ module WMonad.Util.X
     , currentTime
     , anyKey
     -- * Events
-    , selectInput
     , clientMask
     , rootMask
+    -- * Server Actions
+    , selectInput
+    , tileWindow
     ) where
 
 
@@ -27,12 +31,6 @@ currentTime = noneId
 
 anyKey :: KEYCODE
 anyKey = 0
-
-
-selectInput :: MonadX x m => WINDOW -> [EventMask] -> m ()
-selectInput w ems = notify $ MkChangeWindowAttributes w vp
-  where
-    vp = toValueParam [(CWEventMask, toMask ems)]
 
 
 getCleanedScreenInfo :: MonadX x m => m [ScreenInfo]
@@ -79,3 +77,32 @@ keyButToMod KeyButMaskMod3    = Just ModMask3
 keyButToMod KeyButMaskMod4    = Just ModMask4
 keyButToMod KeyButMaskMod5    = Just ModMask5
 keyButToMod _                 = Nothing
+
+
+selectInput :: MonadX x m => WINDOW -> [EventMask] -> m ()
+selectInput w ems = notify $ MkChangeWindowAttributes w vp
+  where
+    vp = toValueParam [(CWEventMask, toMask ems)]
+
+
+moveResizeWindow :: MonadX x m => WINDOW -> RECTANGLE -> m ()
+moveResizeWindow w MkRECTANGLE{..} = notify $ MkConfigureWindow w vp
+  where
+    vp = toValueParam [ (ConfigWindowX, fromIntegral x_RECTANGLE)
+                      , (ConfigWindowY, fromIntegral y_RECTANGLE)
+                      , (ConfigWindowWidth, fromIntegral width_RECTANGLE)
+                      , (ConfigWindowHeight, fromIntegral height_RECTANGLE)
+                      ]
+
+
+tileWindow :: MonadX x m => WINDOW -> RECTANGLE -> m ()
+tileWindow w MkRECTANGLE{..} =  do
+    bw <- (fromIntegral . border_width_GetGeometryReply) <$> req (MkGetGeometry ((fromXid.toXid) w))
+    let least x | x <= bw*2  = 1
+                | otherwise  = x - bw*2
+    moveResizeWindow w $ MkRECTANGLE
+        x_RECTANGLE
+        y_RECTANGLE
+        (least height_RECTANGLE)
+        (least width_RECTANGLE)
+    -- let least x = fromIntegral (if x <= bw*2 then 1 else x - bw*2)
