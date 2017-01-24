@@ -16,17 +16,18 @@ module WMonad.Types.Abstract.Operations
     , removeR
     , removeL
 
-    -- * PaneSet
+    -- * Pane
+    , insertFlat
+    , spreadOut
+    , tags
 
+    -- * PaneSet
     , workspaces
     , visibleWorkspaces
     , workspacesContaining
     , findTag
     , allClients
 
-    -- * Misc
-    , insertFlat
-    , spreadOut
     ) where
 
 
@@ -45,6 +46,14 @@ insertFlat a (Branch l stack) = Branch l . spreadOut $ insertR (Part def (Pane d
 
 spreadOut :: Default n => Stack (Part n t a) -> Stack (Part n t a)
 spreadOut = traverse.size .~ def
+
+
+tags :: Traversal' (Pane n t a) t
+tags f (Pane t fill) = Pane <$> f t <*> go f fill
+  where
+    go f Empty = pure Empty
+    go f (Leaf a) = pure (Leaf a)
+    go f (Branch l stack) = Branch l <$> (traverse.content.tags) f stack
 
 
 -- Stack

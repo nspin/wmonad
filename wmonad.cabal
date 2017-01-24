@@ -14,6 +14,9 @@ library
   hs-source-dirs:    src
 
   exposed-modules:   WMonad.Main
+                   , WMonad.Core
+                   , WMonad.Operations
+                   , WMonad.Geometry
                    , WMonad.Types
                    , WMonad.Types.Abstract
                    , WMonad.Types.Abstract.Operations
@@ -21,8 +24,6 @@ library
                    , WMonad.Types.Concrete
                    , WMonad.Types.Concrete.Operations
                    , WMonad.Types.Concrete.Operations.Gen
-                   , WMonad.Core
-                   , WMonad.Operations
                    , WMonad.Util
                    , WMonad.Util.X
                    , WMonad.Config
