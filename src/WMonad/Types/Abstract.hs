@@ -1,10 +1,10 @@
 module WMonad.Types.Abstract
     ( Stack(..)
-    , Layout(..)
     , Pane(..)
-    , Tree(..)
-    , ABranch(..)
-    , TreeSet(..)
+    , Fill(..)
+    , Part(..)
+    , Layout(..)
+    , PaneSet(..)
     , Screen(..)
     , Workspace(..)
     , RationalRect(..)
@@ -25,54 +25,68 @@ instance Traversable Stack where
 instance Functor Stack where fmap = fmapDefault
 instance Foldable Stack where foldMap = foldMapDefault
 
-data Layout = Stacked | Horizontal | Vertical deriving (Eq, Show, Read)
 
-data Pane n b l = Pane { _size :: n
-                       , _content :: Tree n b l
+data Pane n t a = Pane { _label :: t
+                       , _fill :: Fill n t a
                        } deriving (Eq, Show, Read)
 
-data Tree n b l = Leaf l | Branch Layout b (Stack (Pane n b l)) deriving (Eq, Show, Read)
+data Fill n t a = Empty | Leaf a | Branch Layout (Stack (Part n t a))
+    deriving (Eq, Show, Read)
 
-data ABranch n b l = ABranch { _aLayout :: Layout
-                             , _aRoot :: b
-                             , _aStack :: (Stack (Pane n b l))
-                             } deriving (Eq, Show, Read)
+data Layout = Stacked | Horizontal | Vertical
+    deriving (Eq, Show, Read)
 
+data Part n t a = Part { _size :: n
+                       , _content :: Pane n t a
+                       } deriving (Eq, Show, Read)
 
-instance Traversable (Pane n b) where
-    traverse f (Pane s t) = Pane s <$> traverse f t
+--
 
-instance Functor (Pane n b) where fmap = fmapDefault
-instance Foldable (Pane n b) where foldMap = foldMapDefault
-
-
-instance Traversable (Tree n b) where
-    traverse f (Leaf a) = Leaf <$> f a
-    traverse f (Branch l a stack) = Branch l a <$> traverse (traverse f) stack
-
-instance Functor (Tree n b) where fmap = fmapDefault
-instance Foldable (Tree n b) where foldMap = foldMapDefault
-
-data TreeSet i n b l sid sd = TreeSet
-    { _current :: Screen i n b l sid sd
-    , _visible :: [Screen i n b l sid sd]
-    , _hidden :: [Workspace i n b l]
-    , _floating :: M.Map l RationalRect
+data PaneSet sid sd i n t a = TreeSet
+    { _current :: Screen sid sd i n t a
+    , _visible :: [Screen sid sd i n t a]
+    , _hidden :: [Workspace i n t a]
+    , _floating :: M.Map a RationalRect
     } deriving (Eq, Show, Read)
 
 
-data Screen i n b l sid sd = Screen
+data Screen sid sd i n t a = Screen
     { _screen :: sid
     , _screenDetail :: sd
-    , _workspace :: Workspace i n b l
+    , _workspace :: Workspace i n t a
     } deriving (Eq, Show, Read)
 
 
-data Workspace i n b l = Workspace
+data Workspace i n t a = Workspace
     { _tag :: i
-    , _tree :: Maybe (Tree n b l)
+    , _pane :: Pane n t a
     } deriving (Eq, Show, Read)
 
 
 data RationalRect = RationalRect Rational Rational Rational Rational
     deriving (Eq, Show, Read)
+
+
+-- Instances
+
+instance Traversable (Pane n t) where
+    traverse f (Pane t fill) = Pane t <$> traverse f fill
+
+instance Functor (Pane n t) where fmap = fmapDefault
+instance Foldable (Pane n t) where foldMap = foldMapDefault
+
+
+instance Traversable (Fill n t) where
+    traverse f Empty = pure Empty
+    traverse f (Leaf a) = Leaf <$> f a
+    traverse f (Branch l stack) = Branch l <$> (traverse.traverse) f stack
+
+instance Functor (Fill n b) where fmap = fmapDefault
+instance Foldable (Fill n b) where foldMap = foldMapDefault
+
+
+instance Traversable (Part n t) where
+    traverse f (Part n pane) = Part n <$> traverse f pane
+
+instance Functor (Part n t) where fmap = fmapDefault
+instance Foldable (Part n t) where foldMap = foldMapDefault

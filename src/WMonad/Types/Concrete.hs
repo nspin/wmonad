@@ -38,10 +38,10 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 
 
-type WindowSet = TreeSet WorkspaceId Portion Tag WINDOW ScreenId ScreenInfo
+type WindowSet = PaneSet ScreenId ScreenInfo WorkspaceId Portion Tag WINDOW
 
 type Portion = Int
-type Tag = Int
+type Tag = Maybe Int
 
 newtype WorkspaceId = WorkspaceId { getWorkspaceId :: Int }
     deriving (Eq, Ord, Show, Read, Enum, Num, Integral, Real)

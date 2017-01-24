@@ -25,7 +25,7 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 
 import Control.Exception
-import Control.Lens
+import Control.Lens hiding (Empty)
 
 import Control.Monad.Logger
 import Control.Monad.Reader
@@ -56,7 +56,7 @@ start Config{..} = do
     selectInput root rootMask
 
     let screens = zipWith Screen [1..] xinesc
-        (seen, hidden) = L.splitAt (length screens) [ Workspace i Nothing | i <- [1..9] ]
+        (seen, hidden) = L.splitAt (length screens) [ Workspace i (Pane Nothing Empty) | i <- [1..9] ]
         current:visible = zipWith ($) screens seen
 
         ws0 = TreeSet

@@ -16,7 +16,11 @@ library
   exposed-modules:   WMonad.Main
                    , WMonad.Types
                    , WMonad.Types.Abstract
+                   , WMonad.Types.Abstract.Operations
+                   , WMonad.Types.Abstract.Operations.Gen
                    , WMonad.Types.Concrete
+                   , WMonad.Types.Concrete.Operations
+                   , WMonad.Types.Concrete.Operations.Gen
                    , WMonad.Core
                    , WMonad.Operations
                    , WMonad.Util
