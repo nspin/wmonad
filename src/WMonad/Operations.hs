@@ -5,11 +5,14 @@ module WMonad.Operations
 
 
 import WMonad.Types
+import WMonad.Util
 import WMonad.Util.X
 
 import Graphics.XHB
 import Graphics.XHB.Monad
 import Graphics.XHB.MappingState
+
+import Data.Maybe
 
 import Control.Monad.Reader
 import Control.Monad.State
@@ -23,10 +26,9 @@ grabKeys = do
     ks <- asks $ M.keys . _keyActions
     notify $ MkUngrabKey anyKey root [ModMaskAny]
     let grab m kc = notify $ MkGrabKey True root m kc GrabModeAsync GrabModeAsync
-    forM_ ks $ \(mask, sym) -> do
+    forM_ ks $ \(kbm, sym) -> do
          kcs <- getsMapping $ keyCodesOf sym . keyMap
-         forM_ kcs $ \kc ->
-            grab mask kc
+         forM_ kcs $ grab (mapMaybe keyButToMod kbm)
 
 
 grabButtons :: W s ()
@@ -35,4 +37,5 @@ grabButtons = do
     bs <- asks $ M.keys . _buttonActions
     let grab m ix = notify $ MkGrabButton True root [EventMaskButtonPress]
                               GrabModeAsync GrabModeAsync noneId noneId ix m
-    forM_ bs $ uncurry grab
+    forM_ bs $ \(kbm, ix) -> do
+            grab (mapMaybe keyButToMod kbm) ix

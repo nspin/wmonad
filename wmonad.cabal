@@ -14,10 +14,11 @@ library
   hs-source-dirs:    src
 
   exposed-modules:   WMonad.Main
-                   , WMonad.Core
                    , WMonad.Types
                    , WMonad.Types.Abstract
                    , WMonad.Types.Concrete
+                   , WMonad.Core
+                   , WMonad.Operations
                    , WMonad.Util
                    , WMonad.Util.X
                    , WMonad.Config
@@ -28,6 +29,7 @@ library
                    , transformers
                    , lens
                    , semigroupoids
+                   , array
                    , containers
                    , text
 
@@ -45,6 +47,6 @@ library
                    , setlocale
 
 
-executable wm
+executable wmonad
   main-is:           Main.hs
   build-depends:     base, wmonad

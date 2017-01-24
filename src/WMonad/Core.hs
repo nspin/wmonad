@@ -7,19 +7,21 @@ module WMonad.Core
     ) where
 
 
-import WMonad.Types
 import WMonad.Operations
+import WMonad.Types
+import WMonad.Util
 
 import Graphics.XHB
 import Graphics.XHB.Monad
 import Graphics.XHB.AtomCache
 import Graphics.XHB.MappingState
 
+import Data.Array
 import Data.Foldable
 import Data.Maybe
+import qualified Data.Map as M
 
 import Control.Lens
-
 import Control.Monad
 import Control.Monad.Logger
 import Control.Monad.Reader
@@ -28,7 +30,8 @@ import Control.Monad.State
 
 manageWindows :: W s a
 manageWindows = do
-    undefined -- actions that happen both before and during event loop (grabbing keys, etc)
+    grabKeys
+    grabButtons
     forever $ do
         ev <- waitEvent
         let f env = env { _mousePosition = mousePositionFrom ev
@@ -57,18 +60,28 @@ handle hs ev = asum [ h `fmap` fromEvent ev | EventHandler h <- hs ]
 
 handlers :: [EventHandler (W s ())]
 handlers = [ EventHandler onKeyPress
+           , EventHandler onMappingNotify
            , EventHandler onMapRequest
-           -- ...
            ]
 
 
 -- Event handlers
 
-onKeyPress :: (MonadX IO m, MonadLogger m) => KeyPressEvent -> m ()
-onKeyPress MkKeyPressEvent{..} = do
-    undefined
+onKeyPress :: KeyPressEvent -> W s ()
+onKeyPress e@MkKeyPressEvent{..} = do
+    syms <- getsMapping ((! detail_KeyPressEvent) . keyMap)
+    logp (state_KeyPressEvent, syms)
+    ka <- asks _keyActions
+    forM_ syms $ \sym -> do
+        fromMaybe (return ()) $ M.lookup (state_KeyPressEvent, sym) ka
+
+
+onMappingNotify :: MappingNotifyEvent -> W s ()
+onMappingNotify e@MkMappingNotifyEvent{..} = do
+    updateMapping e
+    grabKeys
 
 
 onMapRequest :: MapRequestEvent -> W s ()
 onMapRequest MkMapRequestEvent{window_MapRequestEvent = w} = do
-    undefined
+    logs "MapRequestEvent"

@@ -22,7 +22,7 @@ module WMonad.Types.Concrete
 
 import WMonad.Types.Abstract
 
-import Graphics.XHB (KEYSYM, ButtonIndex, ModMask, WINDOW, SomeEvent, RECTANGLE)
+import Graphics.XHB (KEYSYM, ButtonIndex, KeyButMask, WINDOW, SomeEvent, RECTANGLE)
 import Graphics.XHB.Gen.Xinerama (ScreenInfo)
 import Graphics.XHB.Monad
 import Graphics.XHB.MappingState
@@ -68,16 +68,16 @@ data WState s = WState
 
 data WEnv s = WEnv
     { _rootWindow :: WINDOW
-    , _keyActions :: M.Map ([ModMask], KEYSYM) (W s ())
-    , _buttonActions :: M.Map ([ModMask], ButtonIndex) (WINDOW -> W s ())
+    , _keyActions :: M.Map ([KeyButMask], KEYSYM) (W s ())
+    , _buttonActions :: M.Map ([KeyButMask], ButtonIndex) (WINDOW -> W s ())
     , _mouseFocused :: Bool
     , _mousePosition :: Maybe (Position, Position)
     , _currentEvent :: Maybe SomeEvent
     }
 
 data Config s = Config
-    { _buttonActionsConfig :: M.Map ([ModMask], ButtonIndex) (WINDOW -> W s ())
-    , _keyActionsConfig :: M.Map ([ModMask], KEYSYM) (W s ())
+    { _buttonActionsConfig :: M.Map ([KeyButMask], ButtonIndex) (WINDOW -> W s ())
+    , _keyActionsConfig :: M.Map ([KeyButMask], KEYSYM) (W s ())
     , _state0 :: s
     }
 

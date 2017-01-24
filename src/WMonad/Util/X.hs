@@ -1,5 +1,6 @@
 module WMonad.Util.X
     ( getCleanedScreenInfo
+    , keyButToMod
     -- * Constants
     , noneId
     , currentTime
@@ -66,3 +67,15 @@ rootMask = [ EventMaskSubstructureRedirect
            , EventMaskStructureNotify
            , EventMaskButtonPress
            ]
+
+
+keyButToMod :: KeyButMask -> Maybe ModMask
+keyButToMod KeyButMaskShift   = Just ModMaskShift
+keyButToMod KeyButMaskLock    = Just ModMaskLock
+keyButToMod KeyButMaskControl = Just ModMaskControl
+keyButToMod KeyButMaskMod1    = Just ModMask1
+keyButToMod KeyButMaskMod2    = Just ModMask2
+keyButToMod KeyButMaskMod3    = Just ModMask3
+keyButToMod KeyButMaskMod4    = Just ModMask4
+keyButToMod KeyButMaskMod5    = Just ModMask5
+keyButToMod _                 = Nothing

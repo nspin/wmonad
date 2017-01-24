@@ -4,6 +4,7 @@ module WMonad.Config
 
 
 import WMonad.Types
+import WMonad.Util
 
 import Graphics.XHB
 import Graphics.XHB.KeySym.Defs
@@ -11,11 +12,11 @@ import Graphics.XHB.KeySym.Defs
 import qualified Data.Map as M
 
 
-defaultButtonActions :: M.Map ([ModMask], ButtonIndex) (WINDOW -> W s ())
-defaultButtonActions = M.fromList [(([ModMask1], ButtonIndex1), const (return ()))]
+defaultButtonActions :: M.Map ([KeyButMask], ButtonIndex) (WINDOW -> W s ())
+defaultButtonActions = M.fromList [(([KeyButMaskMod1], ButtonIndex1), const (logs "ButtonIndex1"))]
 
-defaultKeyActions :: M.Map ([ModMask], KEYSYM) (W s ())
-defaultKeyActions = M.fromList [(([ModMask1], xK_x), return ())]
+defaultKeyActions :: M.Map ([KeyButMask], KEYSYM) (W s ())
+defaultKeyActions = M.fromList [(([KeyButMaskMod1], xK_x), logs "xK_x")]
 
 defaultConfig :: Config ()
 defaultConfig = Config
