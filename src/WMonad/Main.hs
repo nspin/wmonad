@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module WMonad.Main
     ( wmonad
     ) where
@@ -17,6 +19,8 @@ import System.Posix.Process (executeFile, forkProcess, getAnyProcessStatus, crea
 import System.Posix.Signals
 
 import Data.Maybe
+import qualified Data.Map as M
+import qualified Data.Set as S
 
 import Control.Exception
 import Control.Lens
@@ -42,10 +46,23 @@ wmonad config = do
 
 
 start :: Config s -> X IO a
-start conf = do
-    undefined -- collect env-related x server state, etc.
-    let env = undefined
-        st = undefined
+start Config{..} = do
+    root <- asksX getRoot
+    let env = WEnv
+            { _rootWindow = root
+            , _keyActions = _keyActionsConfig
+            , _buttonActions = _buttonActionsConfig
+            , _mouseFocused = False
+            , _mousePosition = Nothing
+            , _currentEvent = Nothing
+            }
+        st = WState
+            { _extra = _state0
+            , _mapped = S.empty
+            , _waitingUnmap = M.empty
+            , _dragging = Nothing
+            , _windowset = undefined
+            }
     manageWindows & runAtomCacheT
                   . runMappingT
                   . flip evalStateT st
