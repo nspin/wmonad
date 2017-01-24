@@ -13,6 +13,7 @@ module WMonad.Util.X
     -- * Server Actions
     , selectInput
     , tileWindow
+    , getBorderWidth
     ) where
 
 
@@ -97,7 +98,7 @@ moveResizeWindow w MkRECTANGLE{..} = notify $ MkConfigureWindow w vp
 
 tileWindow :: MonadX x m => WINDOW -> RECTANGLE -> m ()
 tileWindow w MkRECTANGLE{..} =  do
-    bw <- (fromIntegral . border_width_GetGeometryReply) <$> req (MkGetGeometry ((fromXid.toXid) w))
+    bw <- getBorderWidth w
     let least x | x <= bw*2  = 1
                 | otherwise  = x - bw*2
     moveResizeWindow w $ MkRECTANGLE
@@ -105,4 +106,7 @@ tileWindow w MkRECTANGLE{..} =  do
         y_RECTANGLE
         (least height_RECTANGLE)
         (least width_RECTANGLE)
-    -- let least x = fromIntegral (if x <= bw*2 then 1 else x - bw*2)
+
+
+getBorderWidth :: (MonadX x m, Integral n) => WINDOW -> m n
+getBorderWidth w = (fromIntegral . border_width_GetGeometryReply) <$> req (MkGetGeometry ((fromXid.toXid) w))
