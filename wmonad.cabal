@@ -21,6 +21,7 @@ library
                    , WMonad.Types.Abstract
                    , WMonad.Types.Abstract.Operations
                    , WMonad.Types.Abstract.Operations.Gen
+                   , WMonad.Types.Abstract.Draw
                    , WMonad.Types.Concrete
                    , WMonad.Types.Concrete.Operations
                    , WMonad.Types.Concrete.Operations.Gen
@@ -56,3 +57,14 @@ library
 executable wmonad
   main-is:           Main.hs
   build-depends:     base, wmonad
+
+
+test-suite properties
+  type:             exitcode-stdio-1.0
+  main-is:          Properties.hs
+  hs-source-dirs:   tests
+  build-depends:    base
+                  , mtl
+                  , containers
+                  , lens
+                  , wmonad

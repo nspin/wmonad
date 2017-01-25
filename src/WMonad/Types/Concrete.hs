@@ -41,11 +41,11 @@ import qualified Data.Set as S
 
 type WindowSet = PaneSet ScreenId ScreenInfo WorkspaceId Portion Tag WINDOW
 
-newtype Portion = Portion { getPortion :: Int }
-    deriving (Eq, Ord, Show, Read, Enum, Num, Integral, Real)
+newtype Portion = Portion { getPortion :: Rational }
+    deriving (Eq, Ord, Show, Read, Enum, Num, Real, Fractional, RealFrac)
 
 instance Default Portion where
-    def = 10000
+    def = 1
 
 type Tag = Maybe Int
 
