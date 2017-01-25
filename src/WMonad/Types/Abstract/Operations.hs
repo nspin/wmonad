@@ -17,12 +17,16 @@ module WMonad.Types.Abstract.Operations
     , removeL
 
     -- * Pane
+    , mapPaneMaybe
+    , filterPane
+    , visibleLeaves
     , insertFlat
     , spreadOut
     , tags
 
     -- * PaneSet
     , workspaces
+    , visibleScreens
     , visibleWorkspaces
     , workspacesContaining
     , findTag
@@ -114,6 +118,29 @@ swapL (Stack (l:ls) x (r:rs)) = Stack (r:ls) x rs
 swapL (Stack ls x []) = Stack [] x (reverse ls)
 
 
+-- Pane
+
+visibleLeaves :: Traversal' (Pane n t a) a
+visibleLeaves f (Pane t fill) = Pane t <$> case fill of
+    Empty -> pure Empty
+    Leaf a ->  Leaf <$> f a
+    Branch l stack -> let trav = case l of
+                            Stacked -> center
+                            _ -> traverse
+                      in Branch Stacked <$> (trav.content.visibleLeaves) f stack
+
+
+mapPaneMaybe :: (a -> Maybe b) -> Pane n t a -> Pane n t b
+mapPaneMaybe f (Pane t fill) = Pane t $ case fill of
+    Empty -> Empty
+    Leaf a -> maybe Empty Leaf $ f a
+    Branch l stack -> Branch l $ stack & traverse.content %~ mapPaneMaybe f
+
+
+filterPane :: (a -> Bool) -> Pane n t a -> Pane n t a
+filterPane p = mapPaneMaybe $ \x -> if p x then Just x else Nothing
+
+
 -- PaneSet
 
 workspaces :: Traversal' (PaneSet sid sd i n t a) (Workspace i n t a)
@@ -124,12 +151,16 @@ workspaces f PaneSet{..} = PaneSet
     <*> pure _floating
 
 
-visibleWorkspaces :: Traversal' (PaneSet sid sd i n t a) (Workspace i n t a)
-visibleWorkspaces f PaneSet{..} = PaneSet
-    <$> traverseOf workspace f _current
-    <*> traverseOf (traverse.workspace) f _visible
+visibleScreens :: Traversal' (PaneSet sid sd i n t a) (Screen sid sd i n t a)
+visibleScreens f PaneSet{..} = PaneSet
+    <$> f _current
+    <*> traverse f _visible
     <*> pure _hidden
     <*> pure _floating
+
+
+visibleWorkspaces :: Traversal' (PaneSet sid sd i n t a) (Workspace i n t a)
+visibleWorkspaces = visibleScreens.workspace
 
 
 workspacesContaining :: Eq a => a -> Traversal' (PaneSet sid sd i n t a) (Workspace i n t a)

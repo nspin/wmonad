@@ -23,7 +23,6 @@ module WMonad.Types.Concrete
 import WMonad.Types.Abstract
 
 import Graphics.XHB (KEYSYM, ButtonIndex, KeyButMask, WINDOW, SomeEvent, RECTANGLE)
-import Graphics.XHB.Gen.Xinerama (ScreenInfo)
 import Graphics.XHB.Monad
 import Graphics.XHB.MappingState
 import Graphics.XHB.EventQueue
@@ -39,7 +38,7 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 
 
-type WindowSet = PaneSet ScreenId ScreenInfo WorkspaceId Portion Tag WINDOW
+type WindowSet = PaneSet ScreenId RECTANGLE WorkspaceId Portion Tag WINDOW
 
 newtype Portion = Portion { getPortion :: Rational }
     deriving (Eq, Ord, Show, Read, Enum, Num, Real, Fractional, RealFrac)

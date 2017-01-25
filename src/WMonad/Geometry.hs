@@ -4,19 +4,46 @@
 
 module WMonad.Geometry
     ( layout
+    , layoutSplit
+    , layoutSet
+    , layoutSetSplit
     ) where
 
 
 import WMonad.Types
+import WMonad.Util.X
 
 import Graphics.XHB
+import Graphics.XHB.Gen.Xinerama
 
+import Data.Either
 import Control.Lens hiding (Empty)
 import Control.Monad.State
 
 
 layout :: (Num n, RealFrac n) => RECTANGLE -> Pane n t a -> ([(Maybe RECTANGLE, t)], [(Maybe RECTANGLE, a)])
 layout r p = let c = solveLayout r p in (c^..tags, c^..traverse)
+
+splitLayout :: ([(Maybe RECTANGLE, t)], [(Maybe RECTANGLE, a)]) -> ([(RECTANGLE, t)], [t], [(RECTANGLE, a)], [a])
+splitLayout (mt, ma) = (a, b, c, d)
+  where
+    (a, b) = partitionEithers $ map f mt
+    (c, d) = partitionEithers $ map f ma
+    f (Just x, y) = Left (x, y)
+    f (Nothing, y) = Right y
+
+layoutSplit :: (Num n, RealFrac n) => RECTANGLE -> Pane n t a -> ([(RECTANGLE, t)], [t], [(RECTANGLE, a)], [a])
+layoutSplit = ((.).(.)) splitLayout layout
+
+layoutSet :: (Num n, RealFrac n) => PaneSet sid RECTANGLE i n t a -> ([(Maybe RECTANGLE, t)], [(Maybe RECTANGLE, a)])
+layoutSet ps = unzip (map f (ps^..visibleScreens))
+    & _1 %~ concat
+    & _2 %~ concat
+  where
+    f (Screen sid sd ws) = layout sd (_pane ws)
+
+layoutSetSplit :: (Num n, RealFrac n) => PaneSet sid RECTANGLE i n t a -> ([(RECTANGLE, t)], [t], [(RECTANGLE, a)], [a])
+layoutSetSplit = splitLayout . layoutSet
 
 
 solveLayout :: (Num n, RealFrac n) => RECTANGLE -> Pane n t a -> Pane n (Maybe RECTANGLE, t) (Maybe RECTANGLE, a)

@@ -10,6 +10,7 @@ import WMonad.Types
 import WMonad.Util.X
 
 import Graphics.XHB
+import Graphics.XHB.Gen.Xinerama
 import Graphics.XHB.Monad
 import Graphics.XHB.AtomCache
 import Graphics.XHB.MappingState
@@ -51,7 +52,7 @@ start :: Config s -> X IO a
 start Config{..} = do
 
     root <- asksX getRoot
-    xinesc <- getCleanedScreenInfo
+    xinesc <- asksX connectionSetup >>= getCleanedScreenInfo
 
     selectInput root rootMask
 

@@ -62,6 +62,7 @@ handlers :: [EventHandler (W s ())]
 handlers = [ EventHandler onKeyPress
            , EventHandler onMappingNotify
            , EventHandler onMapRequest
+           , EventHandler onUnmapNotify
            ]
 
 
@@ -88,3 +89,15 @@ onMapRequest MkMapRequestEvent{window_MapRequestEvent = w} = do
     or <- override_redirect_GetWindowAttributesReply <$> req (MkGetWindowAttributes w)
     managed <- isClient w
     unless (managed || or) $ manage w
+
+
+onUnmapNotify :: UnmapNotifyEvent -> W s ()
+onUnmapNotify MkUnmapNotifyEvent{window_UnmapNotifyEvent = w, from_configure_UnmapNotifyEvent = synthetic} =
+    whenM (isClient w) $ do
+        e <- gets (fromMaybe 0 . M.lookup w . _waitingUnmap)
+        if (synthetic || e == 0)
+            then unmanage w
+            else waitingUnmap %= M.update mpred w
+      where
+        mpred 1 = Nothing
+        mpred n = Just $ pred n
