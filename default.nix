@@ -15,5 +15,6 @@ mkDerivation {
     xhb-event-queue xhb-keysyms xhb-mapping-state xhb-monad
   ];
   executableHaskellDepends = [ base ];
+  testHaskellDepends = [ base containers lens mtl ];
   license = stdenv.lib.licenses.mit;
 }

@@ -35,7 +35,7 @@ manage w = unlessM (isClient w) $ do
 
 
 unmanage :: WINDOW -> W s ()
-unmanage = windows . over (workspaces.pane) . filterPane . (==)
+unmanage = windows . over (workspaces.pane) . filterPane . (/=)
 
 
 windows :: (WindowSet -> WindowSet) -> W s ()
@@ -50,10 +50,6 @@ windows f = do
     mapM_ setInitialProperties newWindows
 
     windowset .= ws
-
-    -- gets (_current . _windowset) >>= logp
-    -- rect <- gets (_screenDetail . _current . _windowset)
-    -- gets (layout rect . _pane . _workspace . _current . _windowset) >>= logp
 
     let (vt, ht, va, ha) = layoutSetSplit ws
         vis = map snd va

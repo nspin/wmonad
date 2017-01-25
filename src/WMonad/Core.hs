@@ -20,6 +20,7 @@ import Data.Array
 import Data.Foldable
 import Data.Maybe
 import qualified Data.Map as M
+import qualified Data.Set as S
 
 import Control.Lens
 import Control.Monad
@@ -64,6 +65,7 @@ handlers = [ EventHandler onKeyPress
            , EventHandler onMappingNotify
            , EventHandler onMapRequest
            , EventHandler onUnmapNotify
+           -- , EventHandler onDestroyNotify
            ]
 
 
@@ -72,7 +74,6 @@ handlers = [ EventHandler onKeyPress
 onKeyPress :: KeyPressEvent -> W s ()
 onKeyPress e@MkKeyPressEvent{..} = do
     syms <- getsMapping ((! detail_KeyPressEvent) . keyMap)
-    logp (state_KeyPressEvent, syms)
     ka <- asks _keyActions
     forM_ syms $ \sym -> do
         fromMaybe (return ()) $ M.lookup (state_KeyPressEvent, sym) ka
@@ -97,8 +98,15 @@ onUnmapNotify MkUnmapNotifyEvent{window_UnmapNotifyEvent = w, from_configure_Unm
     whenM (isClient w) $ do
         e <- gets (fromMaybe 0 . M.lookup w . _waitingUnmap)
         if (synthetic || e == 0)
-            then unmanage w
+            then logs ("unmanaging " ++ show w) >> unmanage w
             else waitingUnmap %= M.update mpred w
       where
         mpred 1 = Nothing
         mpred n = Just $ pred n
+
+
+onDestroyNotify :: DestroyNotifyEvent -> W s ()
+onDestroyNotify MkDestroyNotifyEvent{window_DestroyNotifyEvent = w} = whenM (isClient w) $ do
+    unmanage w
+    mappedWindows %= S.delete w
+    waitingUnmap %= M.delete w

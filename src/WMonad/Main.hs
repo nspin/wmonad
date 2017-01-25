@@ -44,7 +44,7 @@ wmonad config = do
         Just conn -> do
             end <- unX (start config) conn
             case end of
-                Left err -> die (show err)
+                Left err -> die $ "ERROR: " ++ show err
                 Right _ -> return ()
 
 
