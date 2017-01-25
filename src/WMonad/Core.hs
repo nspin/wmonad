@@ -36,6 +36,7 @@ manageWindows = do
     logs "OK"
     forever $ do
         ev <- waitEvent
+        req MkListExtensions -- https://github.com/aslatter/xhb/issues/12
         let f env = env { _mousePosition = mousePositionFrom ev
                         , _currentEvent = Just ev
                         }
@@ -65,7 +66,7 @@ handlers = [ EventHandler onKeyPress
            , EventHandler onMappingNotify
            , EventHandler onMapRequest
            , EventHandler onUnmapNotify
-           -- , EventHandler onDestroyNotify
+           , EventHandler onDestroyNotify
            ]
 
 
@@ -87,7 +88,6 @@ onMappingNotify e@MkMappingNotifyEvent{..} = do
 
 onMapRequest :: MapRequestEvent -> W s ()
 onMapRequest MkMapRequestEvent{window_MapRequestEvent = w} = do
-    logs "MapRequestEvent"
     or <- override_redirect_GetWindowAttributesReply <$> req (MkGetWindowAttributes w)
     managed <- isClient w
     unless (managed || or) $ manage w
@@ -98,7 +98,7 @@ onUnmapNotify MkUnmapNotifyEvent{window_UnmapNotifyEvent = w, from_configure_Unm
     whenM (isClient w) $ do
         e <- gets (fromMaybe 0 . M.lookup w . _waitingUnmap)
         if (synthetic || e == 0)
-            then logs ("unmanaging " ++ show w) >> unmanage w
+            then unmanage w
             else waitingUnmap %= M.update mpred w
       where
         mpred 1 = Nothing
