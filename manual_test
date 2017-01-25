@@ -1,11 +1,11 @@
 #!/bin/sh
 set -e
-wm=TODO
+wm=$(dirname $0)/result/bin/wmonad
 Xephyr +xinerama :1 &
 pid=$!
 echo "CR to continue"; read
 export DISPLAY=":1"
-$wm/bin/wmonad &
+$wm &
 echo "CR to continue"; read
 xterm &
 wait $pid
