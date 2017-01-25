@@ -51,14 +51,16 @@ windows f = do
 
     windowset .= ws
 
+    -- gets (_current . _windowset) >>= logp
+    -- rect <- gets (_screenDetail . _current . _windowset)
+    -- gets (layout rect . _pane . _workspace . _current . _windowset) >>= logp
+
     let (vt, ht, va, ha) = layoutSetSplit ws
         vis = map snd va
 
     mapM_ (uncurry tileWindow) va
     mapM_ reveal vis
     mapM_ hide (nub (ws0^..visibleWorkspaces.pane.visibleLeaves ++ ws0^..workspaces.traverse) \\ vis)
-
-    return ()
 
 
 isClient :: WINDOW -> W s Bool
@@ -80,10 +82,10 @@ reveal w = do
     whenM (isClient w) $ mappedWindows %= S.insert w
 
 
--- TODO
 setInitialProperties :: MonadX x m => WINDOW -> m ()
 setInitialProperties w = do
     selectInput w clientMask
+    setWindowBorderWidth w 1
 
 
 grabKeys :: W s ()

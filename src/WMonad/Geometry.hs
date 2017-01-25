@@ -88,5 +88,5 @@ shrinkBy :: Integral n => n -> RECTANGLE -> RECTANGLE
 shrinkBy n MkRECTANGLE{..} = MkRECTANGLE
     (x_RECTANGLE + fromIntegral n)
     (y_RECTANGLE + fromIntegral n)
-    (height_RECTANGLE - 2 * fromIntegral n)
     (width_RECTANGLE - 2 * fromIntegral n)
+    (height_RECTANGLE - 2 * fromIntegral n)

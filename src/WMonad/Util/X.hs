@@ -120,8 +120,8 @@ tileWindow MkRECTANGLE{..} w =  do
     moveResizeWindow w $ MkRECTANGLE
         x_RECTANGLE
         y_RECTANGLE
-        (least height_RECTANGLE)
         (least width_RECTANGLE)
+        (least height_RECTANGLE)
 
 getBorderWidth :: (MonadX x m, Integral n) => WINDOW -> m n
 getBorderWidth w = (fromIntegral . border_width_GetGeometryReply) <$> req (MkGetGeometry ((fromXid.toXid) w))
