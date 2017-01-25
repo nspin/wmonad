@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
-wm=$(dirname $0)/result/bin/wmonad
+# wm=$(dirname $0)/result/bin/wmonad
+wm=$(nix-build ../xhb-wm-dev -A wmonad)/bin/wmonad
+# wm="runghc -isrc -i. Main"
 Xephyr +xinerama :1 &
 pid=$!
 echo "CR to continue"; read
