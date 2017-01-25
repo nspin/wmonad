@@ -32,6 +32,7 @@ manageWindows :: W s a
 manageWindows = do
     grabKeys
     grabButtons
+    logs "OK"
     forever $ do
         ev <- waitEvent
         let f env = env { _mousePosition = mousePositionFrom ev
