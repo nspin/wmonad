@@ -66,7 +66,7 @@ newtype W s a = W { unW :: LoggingT (ReaderT (WEnv s) (StateT (WState s) (Mappin
 
 data WState s = WState
     { _windowset :: WindowSet
-    , _mapped :: S.Set WINDOW
+    , _mappedWindows :: S.Set WINDOW
     , _waitingUnmap :: M.Map WINDOW Int
     , _dragging :: Maybe (Position -> Position -> W s (), W s ())
     , _extra :: s

@@ -77,7 +77,7 @@ start Config{..} = do
 
         st = WState
             { _extra = _state0
-            , _mapped = S.empty
+            , _mappedWindows = S.empty
             , _waitingUnmap = M.empty
             , _dragging = Nothing
             , _windowset = ws0
