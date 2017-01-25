@@ -48,7 +48,7 @@ spreadOut :: Default n => Stack (Part n t a) -> Stack (Part n t a)
 spreadOut = traverse.size .~ def
 
 
-tags :: Traversal' (Pane n t a) t
+tags :: Traversal (Pane n t a) (Pane n t' a) t t'
 tags f (Pane t fill) = Pane <$> f t <*> go f fill
   where
     go f Empty = pure Empty

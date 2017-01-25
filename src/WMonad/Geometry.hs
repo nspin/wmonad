@@ -26,9 +26,7 @@ computeLayout r (Pane t fill) = Pane (Just r, t) $ case fill of
     Branch Horizontal parts -> Branch Horizontal (horiz parts)
   where
     r'@MkRECTANGLE{..} = shrinkBy 1 r
-    -- no :: [Part n t a] -> [Part n (Maybe RECTANGLE, t) (Maybe RECTANGLE, a)]
-    -- no = traverse.content %~ (tags %~ (,) Nothing).(traverse %~ (,) Nothing)
-    no = undefined
+    no = traverse.content %~ (tags %~ (,) Nothing).(traverse %~ (,) Nothing)
     vert parts = undefined
     horiz parts = undefined
 
