@@ -10,7 +10,9 @@ module WMonad.Geometry
     ) where
 
 
-import WMonad.Types
+import WMonad.Stack
+import WMonad.Pane
+import WMonad.Windows
 import WMonad.Util.X
 
 import Graphics.XHB
@@ -35,20 +37,19 @@ splitLayout (mt, ma) = (a, b, c, d)
 layoutSplit :: (Num n, RealFrac n) => RECTANGLE -> Pane n t a -> ([(RECTANGLE, t)], [t], [(RECTANGLE, a)], [a])
 layoutSplit = ((.).(.)) splitLayout layout
 
-layoutSet :: (Num n, RealFrac n) => PaneSet sid RECTANGLE i n t a -> ([(Maybe RECTANGLE, t)], [(Maybe RECTANGLE, a)])
+layoutSet :: Windows i t -> ([(Maybe RECTANGLE, t)], [(Maybe RECTANGLE, WINDOW)])
 layoutSet ps = unzip (map f (ps^..visibleScreens))
     & _1 %~ concat
-    & _2 %~ concat
+    & _2 %~ concatMap (map $ over _2 (view raw))
   where
     f (Screen sid sd ws) = layout sd (_pane ws)
 
-layoutSetSplit :: (Num n, RealFrac n) => PaneSet sid RECTANGLE i n t a -> ([(RECTANGLE, t)], [t], [(RECTANGLE, a)], [a])
+layoutSetSplit :: Windows i t -> ([(RECTANGLE, t)], [t], [(RECTANGLE, WINDOW)], [WINDOW])
 layoutSetSplit = splitLayout . layoutSet
 
 
 solveLayout :: (Num n, RealFrac n) => RECTANGLE -> Pane n t a -> Pane n (Maybe RECTANGLE, t) (Maybe RECTANGLE, a)
 solveLayout r (Pane t fill) = Pane (Just r, t) $ case fill of
-    Empty -> Empty
     Leaf a -> Leaf (Just r', a)
     Branch Stacked (Stack ls (Part n pane) rs) -> Branch Stacked $ Stack (no ls) (Part n (solveLayout r' pane)) (no rs)
     Branch Vertical parts -> Branch Vertical (distributeStack False r' parts)

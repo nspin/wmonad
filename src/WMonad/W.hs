@@ -1,26 +1,27 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module WMonad.Types.Concrete
+module WMonad.W
     (
-    -- * WindowSet
-      WindowSet
-    , WorkspaceId
-    , Portion
-    , Tag
-    , ScreenId
     -- * W
-    , W(..)
+      W(..)
     , WEnv(..)
     , WState(..)
     , Position
     , Config(..)
+    
+    -- * Lenses
+    , HasWEnv(..)
+    , HasWState(..)
+    , HasConfig(..)
     ) where
 
 
-import WMonad.Types.Abstract
+import WMonad.Windows
 
 import Graphics.XHB (KEYSYM, ButtonIndex, KeyButMask, WINDOW, SomeEvent, RECTANGLE)
 import Graphics.XHB.Monad
@@ -34,55 +35,42 @@ import Control.Monad.Logger
 
 import Data.Default
 import Data.Int
+import Data.Traversable
 import qualified Data.Map as M
 import qualified Data.Set as S
 
-
-type WindowSet = PaneSet ScreenId RECTANGLE WorkspaceId Portion Tag WINDOW
-
-newtype Portion = Portion { getPortion :: Rational }
-    deriving (Eq, Ord, Show, Read, Enum, Num, Real, Fractional, RealFrac)
-
-instance Default Portion where
-    def = 1
-
-type Tag = Maybe Int
-
-newtype WorkspaceId = WorkspaceId { getWorkspaceId :: Int }
-    deriving (Eq, Ord, Show, Read, Enum, Num, Integral, Real)
-
-newtype ScreenId = ScreenId { getScreenId :: Int }
-    deriving (Eq, Ord, Show, Read, Enum, Num, Integral, Real)
+import Control.Lens
 
 
-newtype W s a = W { unW :: LoggingT (ReaderT (WEnv s) (StateT (WState s) (MappingT (AtomCacheT (X IO))))) a }
+newtype W i t s a = W { unW :: LoggingT (ReaderT (WEnv i t s) (StateT (WState i t s) (MappingT (AtomCacheT (X IO))))) a }
     deriving ( Functor, Applicative, Monad
-             , MonadIO, MonadReader (WEnv s), MonadState (WState s)
+             , MonadIO, MonadReader (WEnv i t s), MonadState (WState i t s)
              , MonadLogger, MappingCtx, AtomCacheCtx
              , MonadX IO
              )
 
 
-data WState s = WState
-    { _windowset :: WindowSet
+data WState i t s = WState
+    { _windowset :: Windows i t
     , _mappedWindows :: S.Set WINDOW
     , _waitingUnmap :: M.Map WINDOW Int
-    , _dragging :: Maybe (Position -> Position -> W s (), W s ())
+    , _dragging :: Maybe (Position -> Position -> W i t s (), W i t s ())
     , _extra :: s
     }
 
-data WEnv s = WEnv
+data WEnv i t s = WEnv
     { _rootWindow :: WINDOW
-    , _keyActions :: M.Map ([KeyButMask], KEYSYM) (W s ())
-    , _buttonActions :: M.Map ([KeyButMask], ButtonIndex) (WINDOW -> W s ())
+    , _keyActions :: M.Map ([KeyButMask], KEYSYM) (W i t s ())
+    , _buttonActions :: M.Map ([KeyButMask], ButtonIndex) (WINDOW -> W i t s ())
     , _mouseFocused :: Bool
     , _mousePosition :: Maybe (Position, Position)
     , _currentEvent :: Maybe SomeEvent
     }
 
-data Config s = Config
-    { _buttonActionsConfig :: M.Map ([KeyButMask], ButtonIndex) (WINDOW -> W s ())
-    , _keyActionsConfig :: M.Map ([KeyButMask], KEYSYM) (W s ())
+data Config i t s = Config
+    { _buttonActionsConfig :: M.Map ([KeyButMask], ButtonIndex) (WINDOW -> W i t s ())
+    , _keyActionsConfig :: M.Map ([KeyButMask], KEYSYM) (W i t s ())
+    , _workspaceTags :: [i]
     , _state0 :: s
     }
 
@@ -103,3 +91,10 @@ instance MonadX x m => MonadX x (LoggingT m) where
     askX = lift askX
     throwErrorX = lift . throwErrorX
     catchErrorX (LoggingT m) err = undefined -- TODO
+
+
+-- Lenses
+
+$(makeClassy ''WState)
+$(makeClassy ''WEnv)
+$(makeClassy ''Config)

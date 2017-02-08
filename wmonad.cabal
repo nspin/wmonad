@@ -17,14 +17,13 @@ library
                    , WMonad.Core
                    , WMonad.Operations
                    , WMonad.Geometry
-                   , WMonad.Types
-                   , WMonad.Types.Abstract
-                   , WMonad.Types.Abstract.Operations
-                   , WMonad.Types.Abstract.Operations.Gen
-                   , WMonad.Types.Abstract.Draw
-                   , WMonad.Types.Concrete
-                   , WMonad.Types.Concrete.Operations
-                   , WMonad.Types.Concrete.Operations.Gen
+
+                   , WMonad.Stack
+                   , WMonad.Pane
+                   , WMonad.Pane.Draw
+                   , WMonad.Windows
+                   , WMonad.W
+
                    , WMonad.Util
                    , WMonad.Util.X
                    , WMonad.Config

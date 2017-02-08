@@ -9,7 +9,10 @@ module WMonad.Operations
     ) where
 
 
-import WMonad.Types
+import WMonad.Stack
+import WMonad.Pane
+import WMonad.Windows
+import WMonad.W
 import WMonad.Geometry
 import WMonad.Util
 import WMonad.Util.X
@@ -18,27 +21,27 @@ import Graphics.XHB
 import Graphics.XHB.Monad
 import Graphics.XHB.MappingState
 
-import Data.List
-import Data.Maybe
-
 import Control.Lens hiding (Empty)
 import Control.Monad.Reader
 import Control.Monad.State
+import Data.List
+import Data.Maybe
+import Data.Default
 import qualified Data.Map as M
 import qualified Data.Set as S
 
 
 -- TODO
-manage :: WINDOW -> W s ()
+manage :: Default t => WINDOW -> W i t s ()
 manage w = unlessM (isClient w) $ do
-    windows $ current.workspace.pane.fill %~ insertFlat w
+    windows $ current.workspace.pane.fill %~ insertFlat (Client w)
 
 
-unmanage :: WINDOW -> W s ()
-unmanage = windows . over (workspaces.pane) . filterPane . (/=)
+unmanage :: WINDOW -> W i t s ()
+unmanage = windows . over (workspaces.pane) . undefined . (/=)
 
 
-windows :: (WindowSet -> WindowSet) -> W s ()
+windows :: (Windows i t -> Windows i t) -> W i t s ()
 windows f = do
 
     ws0 <- gets _windowset
@@ -56,14 +59,14 @@ windows f = do
 
     mapM_ (uncurry tileWindow) va
     mapM_ reveal vis
-    mapM_ hide (nub (ws0^..visibleWorkspaces.pane.visibleLeaves ++ ws0^..workspaces.traverse) \\ vis)
+    mapM_ hide (nub (ws0^..visibleWorkspaces.pane.visibleLeaves.raw ++ ws0^..workspaces.pane.traverse.raw) \\ vis)
 
 
-isClient :: WINDOW -> W s Bool
+isClient :: WINDOW -> W i t s Bool
 isClient = gets . elemOf (windowset.allClients)
 
 
-hide :: WINDOW -> W s ()
+hide :: WINDOW -> W i t s ()
 hide w = whenM (gets (elemOf (mappedWindows.folded) w)) $ do
     selectInput w (delete EventMaskSubstructureNotify clientMask)
     notify $ MkUnmapWindow w
@@ -72,7 +75,7 @@ hide w = whenM (gets (elemOf (mappedWindows.folded) w)) $ do
     mappedWindows %= S.delete w
 
 
-reveal :: WINDOW -> W s ()
+reveal :: WINDOW -> W i t s ()
 reveal w = do
     notify $ MkMapWindow w
     whenM (isClient w) $ mappedWindows %= S.insert w
@@ -84,7 +87,7 @@ setInitialProperties w = do
     setWindowBorderWidth w 1
 
 
-grabKeys :: W s ()
+grabKeys :: W i t s ()
 grabKeys = do
     root <- asks _rootWindow
     ks <- asks $ M.keys . _keyActions
@@ -95,7 +98,7 @@ grabKeys = do
          forM_ kcs $ grab (mapMaybe keyButToMod kbm)
 
 
-grabButtons :: W s ()
+grabButtons :: W i t s ()
 grabButtons = do
     root <- asks _rootWindow
     bs <- asks $ M.keys . _buttonActions

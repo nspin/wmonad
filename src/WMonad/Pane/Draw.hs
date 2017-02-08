@@ -1,10 +1,10 @@
-module WMonad.Types.Abstract.Draw
+module WMonad.Pane.Draw
     ( draw
     ) where
 
 
-import WMonad.Types.Abstract
-import WMonad.Types.Abstract.Operations
+import WMonad.Pane
+import WMonad.Stack
 
 import Data.Function
 
@@ -16,7 +16,6 @@ draw :: (Show n, Show t, Show a) => Pane n t a -> [String]
 draw (Pane t fill) = ("{" ++ show t ++ ": " ++ this ++ "}"):that
   where
     (this, that) = case fill of
-        Empty -> ("EMPTY", [])
         Leaf a -> ("LEAF " ++ show a, [])
         Branch l (Stack ls (Part s x) rs) -> (withLayout l t, ["|"] ++ foldl1 joinSibblings (f ls ++ [c] ++ f rs))
           where

@@ -8,7 +8,7 @@ module WMonad.Core
 
 
 import WMonad.Operations
-import WMonad.Types
+import WMonad.W
 import WMonad.Util
 
 import Graphics.XHB
@@ -17,6 +17,7 @@ import Graphics.XHB.AtomCache
 import Graphics.XHB.MappingState
 
 import Data.Array
+import Data.Default
 import Data.Foldable
 import Data.Maybe
 import qualified Data.Map as M
@@ -29,7 +30,7 @@ import Control.Monad.Reader
 import Control.Monad.State
 
 
-manageWindows :: W s a
+manageWindows :: Default t => W i t s a
 manageWindows = do
     grabKeys
     grabButtons
@@ -61,7 +62,7 @@ data EventHandler a = forall e. Event e => EventHandler (e -> a)
 handle :: [EventHandler a] -> SomeEvent -> Maybe a
 handle hs ev = asum [ h `fmap` fromEvent ev | EventHandler h <- hs ]
 
-handlers :: [EventHandler (W s ())]
+handlers :: Default t => [EventHandler (W i t s ())]
 handlers = [ EventHandler onKeyPress
            , EventHandler onMappingNotify
            , EventHandler onMapRequest
@@ -72,7 +73,7 @@ handlers = [ EventHandler onKeyPress
 
 -- Event handlers
 
-onKeyPress :: KeyPressEvent -> W s ()
+onKeyPress :: KeyPressEvent -> W i t s ()
 onKeyPress e@MkKeyPressEvent{..} = do
     syms <- getsMapping ((! detail_KeyPressEvent) . keyMap)
     ka <- asks _keyActions
@@ -80,20 +81,20 @@ onKeyPress e@MkKeyPressEvent{..} = do
         fromMaybe (return ()) $ M.lookup (state_KeyPressEvent, sym) ka
 
 
-onMappingNotify :: MappingNotifyEvent -> W s ()
+onMappingNotify :: MappingNotifyEvent -> W i t s ()
 onMappingNotify e@MkMappingNotifyEvent{..} = do
     updateMapping e
     grabKeys
 
 
-onMapRequest :: MapRequestEvent -> W s ()
+onMapRequest :: Default t => MapRequestEvent -> W i t s ()
 onMapRequest MkMapRequestEvent{window_MapRequestEvent = w} = do
     or <- override_redirect_GetWindowAttributesReply <$> req (MkGetWindowAttributes w)
     managed <- isClient w
     unless (managed || or) $ manage w
 
 
-onUnmapNotify :: UnmapNotifyEvent -> W s ()
+onUnmapNotify :: UnmapNotifyEvent -> W i t s ()
 onUnmapNotify MkUnmapNotifyEvent{window_UnmapNotifyEvent = w, from_configure_UnmapNotifyEvent = synthetic} =
     whenM (isClient w) $ do
         e <- gets (fromMaybe 0 . M.lookup w . _waitingUnmap)
@@ -105,7 +106,7 @@ onUnmapNotify MkUnmapNotifyEvent{window_UnmapNotifyEvent = w, from_configure_Unm
         mpred n = Just $ pred n
 
 
-onDestroyNotify :: DestroyNotifyEvent -> W s ()
+onDestroyNotify :: DestroyNotifyEvent -> W i t s ()
 onDestroyNotify MkDestroyNotifyEvent{window_DestroyNotifyEvent = w} = whenM (isClient w) $ do
     unmanage w
     mappedWindows %= S.delete w

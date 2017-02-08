@@ -6,7 +6,9 @@ module WMonad.Main
 
 
 import WMonad.Core
-import WMonad.Types
+import WMonad.W
+import WMonad.Windows
+import WMonad.Pane
 import WMonad.Util.X
 
 import Graphics.XHB
@@ -20,6 +22,7 @@ import System.IO
 import System.Posix.Process (executeFile, forkProcess, getAnyProcessStatus, createSession)
 import System.Posix.Signals
 
+import Data.Default
 import Data.Maybe
 import qualified Data.List as L
 import qualified Data.Map as M
@@ -33,7 +36,7 @@ import Control.Monad.Reader
 import Control.Monad.State
 
 
-wmonad :: Config s -> IO ()
+wmonad :: Default t => Config i t s -> IO ()
 wmonad config = do
     hSetBuffering stdout NoBuffering
     hSetBuffering stderr NoBuffering
@@ -48,7 +51,7 @@ wmonad config = do
                 Right _ -> return ()
 
 
-start :: Config s -> X IO a
+start :: Default t => Config i t s -> X IO a
 start Config{..} = do
 
     root <- asksX getRoot
@@ -57,10 +60,10 @@ start Config{..} = do
     selectInput root rootMask
 
     let screens = zipWith Screen [1..] xinesc
-        (seen, hidden) = L.splitAt (length screens) [ Workspace i (Pane Nothing Empty) | i <- [1..9] ]
+        (seen, hidden) = L.splitAt (length screens) [ Workspace i (Pane def (Leaf (Blank undefined))) | i <- _workspaceTags ]
         current:visible = zipWith ($) screens seen
 
-        ws0 = PaneSet
+        ws0 = Windows
             { _floating = M.empty
             , _current = current
             , _visible = visible
