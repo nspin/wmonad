@@ -12,9 +12,9 @@ module WMonad.W
     , WEnv(..)
     , WState(..)
     , Config(..)
+
     , Position
-    , AWindow(..)
-    
+
     -- * Lenses
     , HasWEnv(..)
     , HasWState(..)
@@ -22,7 +22,7 @@ module WMonad.W
     ) where
 
 
-import WMonad.Windows
+import WMonad.Display
 
 import Graphics.XHB (KEYSYM, ButtonIndex, KeyButMask, WINDOW, SomeEvent, RECTANGLE)
 import Graphics.XHB.Monad
@@ -52,9 +52,9 @@ newtype W t l s a = W { unW :: LoggingT (ReaderT (WEnv t l s) (StateT (WState t 
 
 
 data WState t l s = WState
-    { _windowset :: Windows t l
-    , _mappedWindows :: S.Set WINDOW
-    , _waitingUnmap :: M.Map WINDOW Int
+    { _display :: Display t l
+    , _mappedClients :: S.Set Client
+    , _waitingUnmap :: M.Map Client Int
     , _dragging :: Maybe (Position -> Position -> W t l s (), W t l s ())
     , _extra :: s
     }
@@ -77,9 +77,6 @@ data Config t l s = Config
 
 
 type Position = Int16
-
-data AWindow = AFrame Frame | ABlank Blank | AClient Client
-    deriving (Eq, Show)
 
 
 -- Extra Instances

@@ -13,7 +13,7 @@ module WMonad.Operations
 
 import WMonad.Stack
 import WMonad.Pane
-import WMonad.Windows
+import WMonad.Display
 import WMonad.W
 import WMonad.Geometry
 import WMonad.Util
@@ -33,45 +33,32 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 
 
--- TODO
-manage :: Default l => WINDOW -> W t l s ()
-manage w = unlessM (isClient w) $ do
-    -- windows $ current.workspace.pane.fill %~ insertFlat (Right (Client w))
-    undefined
+manage :: Default l => Client -> W t l s ()
+manage cl = undefined
 
 
 unmanage :: WINDOW -> W t l s ()
-unmanage = windows . over (workspaces.pane) . undefined . (/=)
+unmanage = undefined
 
 
-windows :: (Windows i t -> Windows i t) -> W t l s ()
-windows f = do
-    undefined
-
-    -- ws0 <- gets _windowset
-
-    -- let oldVisible = ws0 ^.. visibleWorkspaces.pane.visibleLeaves
-    --     newWindows = toListOf allClients ws \\ toListOf allClients ws0
-    --     ws = f ws0
-
-    -- mapM_ setInitialProperties newWindows
-
-    -- windowset .= ws
-
-    -- let (vt, ht, va, ha) = layoutSetSplit ws
-    --     vis = map snd va
-
-    -- mapM_ (uncurry tileWindow) va
-    -- mapM_ reveal vis
-    -- mapM_ hide (nub (ws0^..visibleWorkspaces.pane.visibleLeaves.raw ++ ws0^..workspaces.pane.traverse.raw) \\ vis)
+windows :: (Display t l -> Display t l) -> W t l s ()
+windows f = undefined
 
 
-isClient :: WINDOW -> W t l s Bool
-isClient = (gets . elemOf (windowset.allClients)) . Client
+isClient :: Client -> W t l s Bool
+isClient = gets . elemOf (display.allClients)
+
+asClient :: AWindow -> (Client -> W t l s ()) -> W t l s ()
+asClient (AClient cl) go = go cl
+asClient _ _ = return ()
+
+asRealClient :: AWindow -> (Client -> W t l s ()) -> W t l s ()
+asRealClient (AClient cl) go = whenM (isClient cl) (go cl)
+asRealClient _ _ = return ()
 
 
 windowType :: WINDOW -> W t l s (Maybe AWindow)
-windowType w = gets $ f . _windowset
+windowType w = gets $ f . _display
   where
     f ws  | elemOf (workspaces.pane.frames ) (Frame  w) ws = Just (AFrame  (Frame  w))
           | elemOf (workspaces.pane.blanks ) (Blank  w) ws = Just (ABlank  (Blank  w))
@@ -79,23 +66,16 @@ windowType w = gets $ f . _windowset
           | otherwise = Nothing
 
 
-hide :: WINDOW -> W t l s ()
-hide w = whenM (gets (elemOf (mappedWindows.folded) w)) $ do
-    selectInput w (delete EventMaskSubstructureNotify clientMask)
-    notify $ MkUnmapWindow w
-    selectInput w clientMask
-    waitingUnmap %= M.insertWith (+) w 1
-    mappedWindows %= S.delete w
+hide :: AWindow -> W t l s ()
+hide aw = undefined
 
 
-reveal :: WINDOW -> W t l s ()
-reveal w = do
-    notify $ MkMapWindow w
-    whenM (isClient w) $ mappedWindows %= S.insert w
+reveal :: AWindow -> W t l s ()
+reveal aw = undefined
 
 
-setInitialProperties :: MonadX x m => WINDOW -> m ()
-setInitialProperties w = do
+setInitialProperties :: MonadX x m => Client -> m ()
+setInitialProperties (Client w) = do
     selectInput w clientMask
     setWindowBorderWidth w 1
 

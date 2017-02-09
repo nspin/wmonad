@@ -3,8 +3,8 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module WMonad.Windows
-    ( Windows(..)
+module WMonad.Display
+    ( Display(..)
     , current
     , visible
     , hidden
@@ -24,13 +24,22 @@ module WMonad.Windows
     , Frame(..)
     , Blank(..)
     , Client(..)
-
+    , AWindow(..)
+    , raw
+    , aframe
+    , ablank
+    , aclient
+    
     -- * Operations
+
     , workspaces
     , visibleScreens
     , visibleWorkspaces
     , tiledClients
     , allClients
+
+    , windowNodes
+    , allWindows
 
     -- , workspacesContaining
     -- , findTag
@@ -50,7 +59,7 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 
 
-data Windows t l = Windows
+data Display t l = Display
     { _current :: Screen t l
     , _visible :: [Screen t l]
     , _hidden :: [Workspace t l]
@@ -84,50 +93,85 @@ newtype Blank = Blank { unBlank :: WINDOW }
 newtype Client = Client { unClient :: WINDOW }
     deriving (Eq, Show)
 
+data AWindow = AFrame Frame | ABlank Blank | AClient Client
+    deriving (Eq, Show)
 
-$(makeLenses ''Windows)
+raw :: AWindow -> WINDOW
+raw (AFrame  (Frame  w)) = w
+raw (ABlank  (Blank  w)) = w
+raw (AClient (Client w)) = w
+
+aframe :: WINDOW -> AWindow
+aframe = AFrame . Frame
+
+ablank :: WINDOW -> AWindow
+ablank = ABlank . Blank
+
+aclient :: WINDOW -> AWindow
+aclient = AClient . Client
+
+
+$(makeLenses ''Display)
 $(makeLenses ''Screen)
 $(makeLenses ''Workspace)
 
 
-workspaces :: Traversal (Windows t l) (Windows t' l') (Workspace t l) (Workspace t' l')
-workspaces f Windows{..} = Windows
+workspaces :: Traversal (Display t l) (Display t' l') (Workspace t l) (Workspace t' l')
+workspaces f Display{..} = Display
     <$> workspace f _current
     <*> (traverse.workspace) f _visible
     <*> traverse f _hidden
     <*> pure _floating
 
 
-visibleScreens :: Traversal' (Windows i t) (Screen i t)
-visibleScreens f Windows{..} = Windows
+visibleScreens :: Traversal' (Display i t) (Screen i t)
+visibleScreens f Display{..} = Display
     <$> f _current
     <*> traverse f _visible
     <*> pure _hidden
     <*> pure _floating
 
 
-visibleWorkspaces :: Traversal' (Windows i t) (Workspace i t)
+visibleWorkspaces :: Traversal' (Display i t) (Workspace i t)
 visibleWorkspaces = visibleScreens . workspace
 
 
-tiledClients :: Traversal' (Windows t l) Client
-tiledClients f Windows{..} = Windows
+tiledClients :: Traversal' (Display t l) Client
+tiledClients f Display{..} = Display
     <$> (workspace.pane.clients) f _current
     <*> (traverse.workspace.pane.clients) f _visible
     <*> (traverse.pane.clients) f _hidden
     <*> pure _floating
 
 
-allClients :: Fold (Windows t l) Client
-allClients f Windows{..} = Windows
+floatingClients :: Fold (Display t l) Client
+floatingClients f (Display c v h fl) = Display c v h <$> (ifolded.asIndex) f fl
+
+
+allClients :: Fold (Display t l) Client
+allClients f Display{..} = Display
     <$> (workspace.pane.clients) f _current
     <*> (traverse.workspace.pane.clients) f _visible
     <*> (traverse.pane.clients) f _hidden
     <*> (ifolded.asIndex) f _floating
 
 
--- workspacesContaining :: WINDOW -> Traversal' (Windows t l) (Workspace t l)
--- workspacesContaining a f (Windows c v h fl) = Windows
+windowNodes :: Fold (Pane l Frame Blank Client) AWindow
+windowNodes = nodes AFrame ABlank AClient
+
+
+allWindows :: Fold (Display t l) AWindow
+allWindows f Display{..} = Display
+    <$> (workspace.pane.windowNodes) f _current
+    <*> (traverse.workspace.pane.windowNodes) f _visible
+    <*> (traverse.pane.windowNodes) f _hidden
+    <*> (ifolded.asIndex.go) f _floating
+  where
+    go f cl = cl <$ f (AClient cl) -- this has to exists somewhere in lens...
+
+
+-- workspacesContaining :: WINDOW -> Traversal' (Display t l) (Workspace t l)
+-- workspacesContaining a f (Display c v h fl) = Display
 --     <$> (workspace.one) f c
 --     <*> (traverse.workspace.one) f v
 --     <*> (traverse.one) f h
@@ -136,5 +180,5 @@ allClients f Windows{..} = Windows
 --     one g ws = if elemOf (pane.traverse.raw) a ws then g ws else pure ws
 
 
--- findTag :: WINDOW -> Traversal' (Windows t l) t
+-- findTag :: WINDOW -> Traversal' (Display t l) t
 -- findTag a = workspacesContaining a . tag

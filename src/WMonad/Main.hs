@@ -7,7 +7,7 @@ module WMonad.Main
 
 import WMonad.Core
 import WMonad.W
-import WMonad.Windows
+import WMonad.Display
 import WMonad.Pane
 import WMonad.Util.X
 
@@ -66,7 +66,7 @@ start Config{..} = do
             ]
         current:visible = zipWith ($) screens seen
 
-        ws0 = Windows
+        ws0 = Display
             { _floating = M.empty
             , _current = current
             , _visible = visible

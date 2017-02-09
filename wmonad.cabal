@@ -21,7 +21,7 @@ library
                    , WMonad.Stack
                    , WMonad.Pane
                    , WMonad.Pane.Draw
-                   , WMonad.Windows
+                   , WMonad.Display
                    , WMonad.W
 
                    , WMonad.Util

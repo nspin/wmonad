@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 
@@ -30,6 +31,8 @@ module WMonad.Pane
     , blanks
     , clients
 
+    , nodes
+
     , visibleFrabels
     , visibleLabels
     , visibleFrames
@@ -47,9 +50,10 @@ module WMonad.Pane
 
 import WMonad.Stack
 
-import Control.Lens
+import Control.Lens hiding ((<.>))
 import Data.Default
 import Data.Functor
+import Data.Functor.Apply
 import Data.Traversable
 
 
@@ -109,6 +113,15 @@ blanks = leaves._Left
 
 clients :: Traversal (Pane l f b c) (Pane l f b c') c c'
 clients = leaves._Right
+
+
+nodes :: (f -> a) -> (b -> a) -> (c -> a) -> Fold (Pane l f b c) a
+nodes x y z = go
+  where
+    go f (Pane label frame fill) = Pane label <$> (frame <$ f (x frame)) <*> case fill of
+        Leaf (Left  b) -> Leaf . Left  <$> (b <$ f (y b))
+        Leaf (Right c) -> Leaf . Right <$> (c <$ f (z c))
+        Branch layout stack -> Branch layout <$> (traverse.content.go) f stack
 
 
 instance Eq l => Ixed (Pane l f b c) where

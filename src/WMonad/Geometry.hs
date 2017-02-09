@@ -16,7 +16,6 @@ module WMonad.Geometry
 
 import WMonad.Stack
 import WMonad.Pane
-import WMonad.Windows
 import WMonad.Util.X
 
 import Graphics.XHB
