@@ -30,7 +30,7 @@ import Control.Monad.Reader
 import Control.Monad.State
 
 
-manageWindows :: Default t => W i t s a
+manageWindows :: Default l => W t l s a
 manageWindows = do
     grabKeys
     grabButtons
@@ -62,7 +62,7 @@ data EventHandler a = forall e. Event e => EventHandler (e -> a)
 handle :: [EventHandler a] -> SomeEvent -> Maybe a
 handle hs ev = asum [ h `fmap` fromEvent ev | EventHandler h <- hs ]
 
-handlers :: Default t => [EventHandler (W i t s ())]
+handlers :: Default l => [EventHandler (W t l s ())]
 handlers = [ EventHandler onKeyPress
            , EventHandler onMappingNotify
            , EventHandler onMapRequest
@@ -73,7 +73,7 @@ handlers = [ EventHandler onKeyPress
 
 -- Event handlers
 
-onKeyPress :: KeyPressEvent -> W i t s ()
+onKeyPress :: KeyPressEvent -> W t l s ()
 onKeyPress e@MkKeyPressEvent{..} = do
     syms <- getsMapping ((! detail_KeyPressEvent) . keyMap)
     ka <- asks _keyActions
@@ -81,20 +81,20 @@ onKeyPress e@MkKeyPressEvent{..} = do
         fromMaybe (return ()) $ M.lookup (state_KeyPressEvent, sym) ka
 
 
-onMappingNotify :: MappingNotifyEvent -> W i t s ()
+onMappingNotify :: MappingNotifyEvent -> W t l s ()
 onMappingNotify e@MkMappingNotifyEvent{..} = do
     updateMapping e
     grabKeys
 
 
-onMapRequest :: Default t => MapRequestEvent -> W i t s ()
+onMapRequest :: Default l => MapRequestEvent -> W t l s ()
 onMapRequest MkMapRequestEvent{window_MapRequestEvent = w} = do
     or <- override_redirect_GetWindowAttributesReply <$> req (MkGetWindowAttributes w)
     managed <- isClient w
     unless (managed || or) $ manage w
 
 
-onUnmapNotify :: UnmapNotifyEvent -> W i t s ()
+onUnmapNotify :: UnmapNotifyEvent -> W t l s ()
 onUnmapNotify MkUnmapNotifyEvent{window_UnmapNotifyEvent = w, from_configure_UnmapNotifyEvent = synthetic} =
     whenM (isClient w) $ do
         e <- gets (fromMaybe 0 . M.lookup w . _waitingUnmap)
@@ -106,7 +106,7 @@ onUnmapNotify MkUnmapNotifyEvent{window_UnmapNotifyEvent = w, from_configure_Unm
         mpred n = Just $ pred n
 
 
-onDestroyNotify :: DestroyNotifyEvent -> W i t s ()
+onDestroyNotify :: DestroyNotifyEvent -> W t l s ()
 onDestroyNotify MkDestroyNotifyEvent{window_DestroyNotifyEvent = w} = whenM (isClient w) $ do
     unmanage w
     mappedWindows %= S.delete w

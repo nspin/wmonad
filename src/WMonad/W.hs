@@ -11,8 +11,9 @@ module WMonad.W
       W(..)
     , WEnv(..)
     , WState(..)
-    , Position
     , Config(..)
+    , Position
+    , AWindow(..)
     
     -- * Lenses
     , HasWEnv(..)
@@ -42,40 +43,43 @@ import qualified Data.Set as S
 import Control.Lens
 
 
-newtype W i t s a = W { unW :: LoggingT (ReaderT (WEnv i t s) (StateT (WState i t s) (MappingT (AtomCacheT (X IO))))) a }
+newtype W t l s a = W { unW :: LoggingT (ReaderT (WEnv t l s) (StateT (WState t l s) (MappingT (AtomCacheT (X IO))))) a }
     deriving ( Functor, Applicative, Monad
-             , MonadIO, MonadReader (WEnv i t s), MonadState (WState i t s)
+             , MonadIO, MonadReader (WEnv t l s), MonadState (WState t l s)
              , MonadLogger, MappingCtx, AtomCacheCtx
              , MonadX IO
              )
 
 
-data WState i t s = WState
-    { _windowset :: Windows i t
+data WState t l s = WState
+    { _windowset :: Windows t l
     , _mappedWindows :: S.Set WINDOW
     , _waitingUnmap :: M.Map WINDOW Int
-    , _dragging :: Maybe (Position -> Position -> W i t s (), W i t s ())
+    , _dragging :: Maybe (Position -> Position -> W t l s (), W t l s ())
     , _extra :: s
     }
 
-data WEnv i t s = WEnv
+data WEnv t l s = WEnv
     { _rootWindow :: WINDOW
-    , _keyActions :: M.Map ([KeyButMask], KEYSYM) (W i t s ())
-    , _buttonActions :: M.Map ([KeyButMask], ButtonIndex) (WINDOW -> W i t s ())
+    , _keyActions :: M.Map ([KeyButMask], KEYSYM) (W t l s ())
+    , _buttonActions :: M.Map ([KeyButMask], ButtonIndex) (AWindow -> W t l s ())
     , _mouseFocused :: Bool
     , _mousePosition :: Maybe (Position, Position)
     , _currentEvent :: Maybe SomeEvent
     }
 
-data Config i t s = Config
-    { _buttonActionsConfig :: M.Map ([KeyButMask], ButtonIndex) (WINDOW -> W i t s ())
-    , _keyActionsConfig :: M.Map ([KeyButMask], KEYSYM) (W i t s ())
-    , _workspaceTags :: [i]
+data Config t l s = Config
+    { _buttonActionsConfig :: M.Map ([KeyButMask], ButtonIndex) (AWindow -> W t l s ())
+    , _keyActionsConfig :: M.Map ([KeyButMask], KEYSYM) (W t l s ())
+    , _workspaceTags :: [t]
     , _state0 :: s
     }
 
 
 type Position = Int16
+
+data AWindow = AFrame Frame | ABlank Blank | AClient Client
+    deriving (Eq, Show)
 
 
 -- Extra Instances

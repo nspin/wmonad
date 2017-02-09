@@ -12,6 +12,7 @@ module WMonad.Stack
     , insertL
     , removeR
     , removeL
+    , discard
 
     ) where
 
@@ -85,3 +86,8 @@ swapR (Stack ls x []) = Stack [] x (reverse ls)
 swapL :: Stack a -> Stack a
 swapL (Stack (l:ls) x (r:rs)) = Stack (r:ls) x rs
 swapL (Stack ls x []) = Stack [] x (reverse ls)
+
+
+-- | ... a [b] c ... => [b]
+discard :: Stack a -> Stack a
+discard (Stack _ x _) = Stack [] x []

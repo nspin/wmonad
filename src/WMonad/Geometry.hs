@@ -3,10 +3,14 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module WMonad.Geometry
-    ( layout
-    , layoutSplit
-    , layoutSet
-    , layoutSetSplit
+    ( solveLayout
+
+    -- * Useful Operations
+    , eithered
+    , nothingPair
+    , justPair
+    , partitionMaybes
+    , partitionEithers
     ) where
 
 
@@ -18,48 +22,50 @@ import WMonad.Util.X
 import Graphics.XHB
 import Graphics.XHB.Gen.Xinerama
 
+import Data.Bifunctor
 import Data.Either
-import Control.Lens hiding (Empty)
+import Control.Lens
 import Control.Monad.State
 
 
-layout :: (Num n, RealFrac n) => RECTANGLE -> Pane n t a -> ([(Maybe RECTANGLE, t)], [(Maybe RECTANGLE, a)])
-layout r p = let c = solveLayout r p in (c^..tags, c^..traverse)
-
-splitLayout :: ([(Maybe RECTANGLE, t)], [(Maybe RECTANGLE, a)]) -> ([(RECTANGLE, t)], [t], [(RECTANGLE, a)], [a])
-splitLayout (mt, ma) = (a, b, c, d)
+eithered :: Iso' (Maybe a, b) (Either b (a, b))
+eithered = iso f g
   where
-    (a, b) = partitionEithers $ map f mt
-    (c, d) = partitionEithers $ map f ma
-    f (Just x, y) = Left (x, y)
-    f (Nothing, y) = Right y
+    f (Nothing, b) = Left b
+    f (Just a, b) = Right (a, b)
+    g (Left b) = (Nothing, b)
+    g (Right (a, b)) = (Just a, b)
 
-layoutSplit :: (Num n, RealFrac n) => RECTANGLE -> Pane n t a -> ([(RECTANGLE, t)], [t], [(RECTANGLE, a)], [a])
-layoutSplit = ((.).(.)) splitLayout layout
+nothingPair :: Traversal' (Maybe a, b) b
+nothingPair = eithered._Left
 
-layoutSet :: Windows i t -> ([(Maybe RECTANGLE, t)], [(Maybe RECTANGLE, WINDOW)])
-layoutSet ps = unzip (map f (ps^..visibleScreens))
-    & _1 %~ concat
-    & _2 %~ concatMap (map $ over _2 (view raw))
-  where
-    f (Screen sid sd ws) = layout sd (_pane ws)
+justPair :: Traversal' (Maybe a, b) (a, b)
+justPair = eithered._Right
 
-layoutSetSplit :: Windows i t -> ([(RECTANGLE, t)], [t], [(RECTANGLE, WINDOW)], [WINDOW])
-layoutSetSplit = splitLayout . layoutSet
+partitionMaybes :: [(Maybe a, b)] -> ([b], [(a, b)])
+partitionMaybes = partitionEithers . toListOf (traverse.eithered)
 
+--
 
-solveLayout :: (Num n, RealFrac n) => RECTANGLE -> Pane n t a -> Pane n (Maybe RECTANGLE, t) (Maybe RECTANGLE, a)
-solveLayout r (Pane t fill) = Pane (Just r, t) $ case fill of
-    Leaf a -> Leaf (Just r', a)
+solveLayout :: RECTANGLE
+            -> Pane l f b c
+            -> Pane l (Maybe RECTANGLE, f) (Maybe RECTANGLE, b) (Maybe RECTANGLE, c)
+
+solveLayout r (Pane label frame fill) = Pane label (Just r, frame) $ case fill of
+    Leaf a -> Leaf $ bimap ((,) (Just r')) ((,) (Just r')) a 
     Branch Stacked (Stack ls (Part n pane) rs) -> Branch Stacked $ Stack (no ls) (Part n (solveLayout r' pane)) (no rs)
     Branch Vertical parts -> Branch Vertical (distributeStack False r' parts)
     Branch Horizontal parts -> Branch Horizontal (distributeStack True r' parts)
   where
     r'@MkRECTANGLE{..} = shrinkBy 1 r
-    no = traverse.content %~ (tags %~ (,) Nothing).(traverse %~ (,) Nothing)
+    no = traverse.content %~ (frames %~ (,) Nothing).(blanks %~ (,) Nothing).(clients %~ (,) Nothing)
 
 
-distributeStack :: forall n t a. (Num n, RealFrac n) => Bool -> RECTANGLE -> Stack (Part n t a) -> Stack (Part n (Maybe RECTANGLE, t) (Maybe RECTANGLE, a))
+distributeStack :: forall l f b c. Bool
+                                -> RECTANGLE
+                                -> Stack (Part l f b c)
+                                -> Stack (Part l (Maybe RECTANGLE, f) (Maybe RECTANGLE, b) (Maybe RECTANGLE, c))
+
 distributeStack isHorizontal r@MkRECTANGLE{..} parts@(Stack ls x rs) = evalState (traverse ration parts) (False, 0)
   where
     total :: Integer
@@ -73,15 +79,15 @@ distributeStack isHorizontal r@MkRECTANGLE{..} parts@(Stack ls x rs) = evalState
                , height_RECTANGLE = fromIntegral amnt
                }
 
-    scale' theSize = floor (toRational theSize * toRational total / toRational (sumOf (traverse.size) parts))
-    scaledTotal = sum . map scale' $ parts^..traverse.size
+    scale' theSize = floor (toRational theSize * toRational total / toRational (sumOf (traverse.portion) parts))
+    scaledTotal = sum . map scale' $ parts^..traverse.portion
     leftOver = total - scaledTotal
     scale isFirst theSize = scale' theSize + (if isFirst then leftOver else 0)
 
-    ration :: Part n t a -> State (Bool, Integer) (Part n (Maybe RECTANGLE, t) (Maybe RECTANGLE, a))
+    ration :: Part l f b c -> State (Bool, Integer) (Part l (Maybe RECTANGLE, f) (Maybe RECTANGLE, b) (Maybe RECTANGLE, c))
     ration part@Part{..} = state $ \(isFirst, soFar) ->
-        ( part & content %~ solveLayout (mkRect soFar (scale isFirst _size))
-        , (False, soFar + scale isFirst _size)
+        ( part & content %~ solveLayout (mkRect soFar (scale isFirst _portion))
+        , (False, soFar + scale isFirst _portion)
         )
 
 

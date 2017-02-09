@@ -36,7 +36,7 @@ import Control.Monad.Reader
 import Control.Monad.State
 
 
-wmonad :: Default t => Config i t s -> IO ()
+wmonad :: Default l => Config t l s -> IO ()
 wmonad config = do
     hSetBuffering stdout NoBuffering
     hSetBuffering stderr NoBuffering
@@ -51,7 +51,7 @@ wmonad config = do
                 Right _ -> return ()
 
 
-start :: Default t => Config i t s -> X IO a
+start :: Default l => Config t l s -> X IO a
 start Config{..} = do
 
     root <- asksX getRoot
@@ -60,7 +60,10 @@ start Config{..} = do
     selectInput root rootMask
 
     let screens = zipWith Screen [1..] xinesc
-        (seen, hidden) = L.splitAt (length screens) [ Workspace i (Pane def (Leaf (Blank undefined))) | i <- _workspaceTags ]
+        (seen, hidden) = L.splitAt (length screens)
+            [ Workspace t (Pane def (Frame undefined) (Leaf (Left (Blank undefined))))
+            | t <- _workspaceTags
+            ]
         current:visible = zipWith ($) screens seen
 
         ws0 = Windows

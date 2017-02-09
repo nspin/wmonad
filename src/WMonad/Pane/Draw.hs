@@ -12,12 +12,15 @@ import Data.Function
 type Chunk = [String]
 
 
-draw :: (Show n, Show t, Show a) => Pane n t a -> [String]
-draw (Pane t fill) = ("{" ++ show t ++ ": " ++ this ++ "}"):that
+draw :: (Show l, Show f, Show b, Show c) => Pane l f b c -> [String]
+draw (Pane label frame fill) = ("{" ++ show label ++ ": " ++ this ++ "}") : that
   where
     (this, that) = case fill of
         Leaf a -> ("LEAF " ++ show a, [])
-        Branch l (Stack ls (Part s x) rs) -> (withLayout l t, ["|"] ++ foldl1 joinSibblings (f ls ++ [c] ++ f rs))
+        Branch layout (Stack ls (Part s x) rs) ->
+            ( withLayout layout label
+            , ["|"] ++ foldl1 joinSibblings (f ls ++ [c] ++ f rs)
+            )
           where
             c = ["(" ++ show s ++ ")", "|"] ++ draw x
             f = map $ \(Part s' x') -> [show s', "|"] ++ draw x'
