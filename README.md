@@ -13,7 +13,7 @@ However, it differs in the following ways:
     Cursors marking branches allow the user to control groups of windows that are not focused, or even on a different screen.
 
 -   The [xhb](https://hackage.haskell.org/package/xhb), along with some
-    [support libaries](https://github.com/nickspinale/xhb-monad) I've written replace
+    [support libaries](https://github.com/nspin/xhb-monad) I've written replace
     the [X11](https://hackage.haskell.org/package/X11) library.
 
 More information about the xhb support libraries mentioned abouve can be found [here](http://nickspinale.com/articles/xhb-monad).
