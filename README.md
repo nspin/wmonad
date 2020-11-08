@@ -16,4 +16,4 @@ However, it differs in the following ways:
     [support libaries](https://github.com/nspin/xhb-monad) I've written replace
     the [X11](https://hackage.haskell.org/package/X11) library.
 
-More information about the xhb support libraries mentioned abouve can be found [here](http://nickspinale.com/articles/xhb-monad).
+More information about the xhb support libraries mentioned abouve can be found [here](https://nickspinale.com/articles/pure-x11-logic-in-haskell.html).
